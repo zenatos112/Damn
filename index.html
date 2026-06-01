@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>DAMN</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Sfondo scuro moderno e font pulito */
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        /* Custom scrollbar invisibile ma funzionale */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <header class="w-full max-w-md text-center my-6">
+        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            MY HUB
+        </h1>
+        <p class="text-xs text-gray-500 mt-1">iPhone 14 Optimized Edition</p>
+    </header>
+
+    <main class="w-full max-w-md flex flex-col gap-4">
+        
+        <div class="flex gap-3 w-full">
+            <button id="btn-main-palestra" onclick="switchSection('palestra')" class="flex-1 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-center shadow-lg active:scale-95 transition-transform text-cyan-400">
+                🏋️‍♂️ Palestra
+            </button>
+            <button id="btn-main-orari" onclick="switchSection('orari')" class="flex-1 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-center shadow-lg active:scale-95 transition-transform text-purple-400">
+                📅 Orari & Note
+            </button>
+        </div>
+
+        <hr class="border-slate-800 my-2">
+
+        <section id="sec-palestra" class="hidden flex flex-col gap-4">
+            <div class="flex gap-2 overflow-x-auto pb-2 snap-x">
+                <button onclick="showWorkout('Lunedi')" class="snap-center px-5 py-2.5 bg-slate-800 rounded-xl text-sm font-medium shrink-0 active:bg-cyan-500 active:text-black transition-colors">Lun</button>
+                <button onclick="showWorkout('Martedi')" class="snap-center px-5 py-2.5 bg-slate-800 rounded-xl text-sm font-medium shrink-0 active:bg-cyan-500 active:text-black transition-colors">Mar</button>
+                <button onclick="showWorkout('Mercoledi')" class="snap-center px-5 py-2.5 bg-slate-800 rounded-xl text-sm font-medium shrink-0 active:bg-cyan-500 active:text-black transition-colors">Mer</button>
+                <button onclick="showWorkout('Giovedi')" class="snap-center px-5 py-2.5 bg-slate-800 rounded-xl text-sm font-medium shrink-0 active:bg-cyan-500 active:text-black transition-colors">Gio</button>
+                <button onclick="showWorkout('Venerdi')" class="snap-center px-5 py-2.5 bg-slate-800 rounded-xl text-sm font-medium shrink-0 active:bg-cyan-500 active:text-black transition-colors">Ven</button>
+            </div>
+
+            <div class="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl min-h-[150px]">
+                <h3 id="workout-day-title" class="text-xl font-bold text-cyan-400 mb-3">Seleziona un giorno</h3>
+                <ul id="workout-list" class="space-y-2 text-gray-300 list-disc list-inside">
+                    </ul>
+            </div>
+        </section>
+
+        <section id="sec-orari" class="hidden flex flex-col gap-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-bold text-purple-400">Impegni Settimanali</h2>
+                <button onclick="clearAllEvents()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold rounded-lg border border-red-500/20 transition-colors">
+                    🗑️ Resetta Settimana
+                </button>
+            </div>
+
+            <div id="orari-days-container" class="space-y-4">
+                </div>
+        </section>
+
+    </main>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJScYxGavJN1UtRhpYs7z6HFAdDO3iXWU",
+            authDomain: "damn-4afb8.firebaseapp.com",
+            projectId: "damn-4afb8",
+            storageBucket: "damn-4afb8.firebasestorage.app",
+            messagingSenderId: "465390435291",
+            appId: "1:465390435291:web:2dc93ea3ffda9221ca45fe",
+            measurementId: "G-1RJRQKKL3L"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        
+        // Dizionario hardcoded per gli allenamenti (Puoi anche passarlo su Firebase se preferisci!)
+        const schedePalestra = {
+            "Lunedi": ["Panca Piana 4x6", "Inclinata Manubri 3x10", "Croci ai cavi 3x12", "Tricipiti Pushdown 4x10"],
+            "Martedi": ["Trazioni 4xMax", "Rematore Bilanciere 4x8", "Pulley Basso 3x10", "Curl Bilanciere 4x8"],
+            "Mercoledi": ["Squat 4x6", "Leg Press 3x10", "Leg Extension 3x12", "Polpacci 4x15"],
+            "Giovedi": ["Military Press 4x6", "Alzate Laterali 4x12", "Postteriori cavi 3x12", "Scrollate 3x15"],
+            "Venerdi": ["Stacco da terra 4x5", "Trazioni 3x8", "Dips Tricipiti 3x10", "Curl Martello 3x10"]
+        };
+
+        const giorniSettimana = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
+
+        // Rende le funzioni accessibili globalmente fuori dal modulo tipo ES6
+        window.switchSection = function(section) {
+            document.getElementById('sec-palestra').classList.add('hidden');
+            document.getElementById('sec-orari').classList.add('hidden');
+            
+            if(section === 'palestra') document.getElementById('sec-palestra').classList.remove('hidden');
+            if(section === 'orari') document.getElementById('sec-orari').classList.remove('hidden');
+        }
+
+        window.showWorkout = function(giorno) {
+            document.getElementById('workout-day-title').innerText = giorno;
+            const listContainer = document.getElementById('workout-list');
+            listContainer.innerHTML = "";
+            
+            schedePalestra[giorno].forEach(es => {
+                const li = document.createElement('li');
+                li.className = "py-1 border-b border-slate-800/50 last:border-0";
+                li.innerText = es;
+                listContainer.appendChild(li);
+            });
+        }
+
+        // Inizializza i blocchi dei giorni per gli Orari
+        function initOrariDOM() {
+            const container = document.getElementById('orari-days-container');
+            container.innerHTML = "";
+
+            giorniSettimana.forEach(giorno => {
+                const dayId = giorno.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Rimuove accenti per id db
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span class="font-bold text-gray-200">${giorno}</span>
+                        <button onclick="clearDayEvents('${dayId}')" class="text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded-md active:scale-95 transition-transform">Svuota</button>
+                    </div>
+                    <ul id="list-${dayId}" class="space-y-1.5 text-sm text-gray-400">
+                        </ul>
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" id="input-${dayId}" placeholder="Aggiungi nota..." class="flex-1 bg-slate-950 text-sm rounded-xl px-3 py-2 border border-slate-800 focus:outline-none focus:border-purple-500 text-gray-200">
+                        <button onclick="addEvent('${dayId}')" class="bg-purple-600 active:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-sm active:scale-95 transition-transform">+</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Push dei dati su Firebase Realtime Database
+        window.addEvent = function(dayId) {
+            const input = document.getElementById(`input-${dayId}`);
+            const text = input.value.trim();
+            if(text === "") return;
+
+            const dbRef = ref(db, `orari/${dayId}`);
+            push(dbRef, {
+                nota: text,
+                timestamp: Date.now()
+            }).then(() => {
+                input.value = "";
+            });
+        }
+
+        // Cancella eventi di un singolo giorno
+        window.clearDayEvents = function(dayId) {
+            if(confirm(`Vuoi azzerare il giorno?`)) {
+                remove(ref(db, `orari/${dayId}`));
+            }
+        }
+
+        // Cancella tutta la settimana
+        window.clearAllEvents = function() {
+            if(confirm("Sei sicuro di voler cancellare TUTTA la settimana? Non si torna indietro!")) {
+                remove(ref(db, 'orari'));
+            }
+        }
+
+        // Sync in tempo reale con Firebase
+        function setupFirebaseSync() {
+            const dbRef = ref(db, 'orari');
+            onValue(dbRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                
+                giorniSettimana.forEach(giorno => {
+                    const dayId = giorno.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const listContainer = document.getElementById(`list-${dayId}`);
+                    if(!listContainer) return;
+                    
+                    listContainer.innerHTML = "";
+
+                    if(data[dayId]) {
+                        Object.keys(data[dayId]).forEach(key => {
+                            const item = data[dayId][key];
+                            const li = document.createElement('li');
+                            li.className = "flex justify-between items-center bg-slate-950/40 px-3 py-1.5 rounded-lg border border-slate-800/30";
+                            li.innerHTML = `
+                                <span>${item.nota}</span>
+                                <button onclick="deleteSingleNote('${dayId}', '${key}')" class="text-gray-600 hover:text-red-400 text-xs ml-2">✕</button>
+                            `;
+                            listContainer.appendChild(li);
+                        });
+                    } else {
+                        listContainer.innerHTML = `<li class="text-xs text-gray-600 italic py-1">Nessun impegno</li>`;
+                    }
+                });
+            });
+        }
+
+        // Cancella singola nota (Bonus utilissimo!)
+        window.deleteSingleNote = function(dayId, noteKey) {
+            remove(ref(db, `orari/${dayId}/${noteKey}`));
+        }
+
+        // Bootstrap
+        initOrariDOM();
+        setupFirebaseSync();
+        // Di default mostra la palestra
+        switchSection('palestra');
+    </script>
+</body>
+</html>
